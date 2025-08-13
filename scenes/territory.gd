@@ -12,7 +12,7 @@ signal controller_changed(territory: Territory, new_controller_id: int)
 @export var start_units: int = 10
 @export var allow_clicks: bool = true
 @export var rect_size: Vector2 = Vector2(200, 120)
-@export var growth_per_tick: int = 1 ## для будущего спавна/прироста
+@export var growth_per_tick: int = 1
 
 ## ===== Константы =====
 const CONTROLLER_HUMAN: int = 0
@@ -42,19 +42,22 @@ func _ready() -> void:
 	self.input_event.connect(_on_area_input_event)
 
 func _apply_rect_size() -> void:
-	## Совмещаем коллизию с визуалом: ColorRect рисуется от (0,0),
-	## у RectangleShape2D центр — посередине; поэтому сдвигаем CollisionShape2D.
+	## 1) Совмещаем коллизию с визуалом
 	if _shape and _shape.shape is RectangleShape2D:
 		var rect_shape: RectangleShape2D = _shape.shape as RectangleShape2D
 		rect_shape.size = rect_size
 		_shape.position = rect_size * 0.5
 
+	## 2) Рисуемый прямоугольник — от (0,0), нужного размера
 	if _color_rect:
 		_color_rect.size = rect_size
 		_color_rect.position = Vector2.ZERO
 
+	## 3) ВАЖНО: так как родитель — Area2D (не Control), Full Rect не даст размера.
+	## Поэтому задаём лейблу размер и позицию напрямую:
 	if _unit_label:
-		_unit_label.set_anchors_preset(Control.LayoutPreset.PRESET_FULL_RECT)
+		_unit_label.position = Vector2.ZERO
+		_unit_label.size = rect_size
 		_unit_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_unit_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_unit_label.text = str(_units)
@@ -93,7 +96,6 @@ func set_controller_id(new_controller_id: int) -> void:
 		_apply_controller_color()
 		controller_changed.emit(self, controller_id)
 
-## Служебно: прямой цвет (если GameManager захочет)
 func set_controller_color(custom_color: Color) -> void:
 	if _color_rect:
 		_color_rect.color = custom_color
