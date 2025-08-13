@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://bhe6d12xxkr0u"]
+[gd_scene load_steps=3 format=3 uid="uid://bhe6d12xxkr0u"]
 
 [ext_resource type="Script" uid="uid://dmo3qvoejfqeu" path="res://scenes/main.gd" id="1_elqb8"]
+[ext_resource type="PackedScene" uid="uid://3u1eouhh6x8w" path="res://scenes/Map.tscn" id="2_vnqqg"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_elqb8")
@@ -17,6 +18,8 @@ scale = Vector2(46.64, 22.24)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 color = Color(0.117647, 0.141176, 0.188235, 1)
+
+[node name="Map" parent="." instance=ExtResource("2_vnqqg")]
 
 [node name="TitleLabel" type="Label" parent="."]
 anchors_preset = 8
