@@ -92,13 +92,13 @@ func _on_map_territory_clicked(id: int) -> void:
 # Выбор источника
 # -------------------------------
 func _handle_pick_source(src: Territory) -> void:
-	print("Попытка выбрать источник id=", src.territory_id)
-	if src.get_controller_id() != PLAYER_HUMAN:
-		print("Источник отклонён: это не территория игрока.")
-		return
+        print("Попытка выбрать источник id=", src.territory_id)
+        if src.controller_id != PLAYER_HUMAN:
+                print("Источник отклонён: это не территория игрока.")
+                return
 
-	var units := src.get_units()
-	var to_send := _compute_send_amount(units)
+        var units: int = src.get_units()
+        var to_send: int = _compute_send_amount(units)
 	if to_send < MIN_SENT_UNITS:
 		print("Источник отклонён: недостаточно юнитов.")
 		return
@@ -121,7 +121,7 @@ func _handle_pick_target(dst: Territory) -> void:
 		_phase = SelectionPhase.IDLE
 		return
 
-	var src := _territories[_source_id]
+        var src: Territory = _territories[_source_id]
 	if dst.territory_id == _source_id:
 		_phase = SelectionPhase.IDLE
 		_source_id = -1
@@ -133,8 +133,8 @@ func _handle_pick_target(dst: Territory) -> void:
 		print("Цель отклонена: территория не сосед.")
 		return
 
-	var available := src.get_units()
-	var to_send := _compute_send_amount(available)
+        var available: int = src.get_units()
+        var to_send: int = _compute_send_amount(available)
 	if to_send < MIN_SENT_UNITS:
 		print("Атака отменена: недостаточно юнитов.")
 		_phase = SelectionPhase.IDLE
@@ -170,10 +170,10 @@ func _compute_send_amount(available: int) -> int:
 # Бой
 # -------------------------------
 func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
-	var src_units_before := src.get_units()
-	var dst_units_before := dst.get_units()
-	var src_ctrl := src.get_controller_id()
-	var dst_ctrl := dst.get_controller_id()
+        var src_units_before: int = src.get_units()
+        var dst_units_before: int = dst.get_units()
+        var src_ctrl: int = src.controller_id
+        var dst_ctrl: int = dst.controller_id
 
 	print("--- БОЙ ---")
 	print(
@@ -184,15 +184,15 @@ func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 
 	src.set_units(src_units_before - attackers)
 
-	if attackers > dst_units_before:
-		var remain := attackers - dst_units_before
-		dst.set_units(remain)
-		dst.set_controller_id(src_ctrl)
-		print("Захват! Новые units цели=", remain, ", новый контроллер=", src_ctrl)
-	else:
-		var defenders_left := dst_units_before - attackers
-		dst.set_units(defenders_left)
-		print("Без захвата. У защитника осталось=", defenders_left, ", контроллер прежний=", dst_ctrl)
+        if attackers > dst_units_before:
+                var remain: int = attackers - dst_units_before
+                dst.set_units(remain)
+                dst.set_controller_id(src_ctrl)
+                print("Захват! Новые units цели=", remain, ", новый контроллер=", src_ctrl)
+        else:
+                var defenders_left: int = dst_units_before - attackers
+                dst.set_units(defenders_left)
+                print("Без захвата. У защитника осталось=", defenders_left, ", контроллер прежний=", dst_ctrl)
 
 	print(
 		"Итог боя: units источника=", src.get_units(),
@@ -204,14 +204,14 @@ func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 # Проверка победы
 # -------------------------------
 func _check_victory() -> void:
-	print("Проверка победы...")
-	var found_ctrls := {}
-	for t in _territories:
-		if t:
-			found_ctrls[t.get_controller_id()] = true
+        print("Проверка победы...")
+        var found_ctrls: Dictionary = {}
+        for t in _territories:
+                if t:
+                        found_ctrls[t.controller_id] = true
 
-	if found_ctrls.size() == 1:
-		var only_ctrl := -1
-		for k in found_ctrls.keys():
-			only_ctrl = int(k)
-		print("=== ПОБЕДА! Контроллер ", only_ctrl, " владеет всеми территориями. ===")
+        if found_ctrls.size() == 1:
+                var only_ctrl: int = -1
+                for k in found_ctrls.keys():
+                        only_ctrl = int(k)
+                print("=== ПОБЕДА! Контроллер ", only_ctrl, " владеет всеми территориями. ===")
