@@ -1,0 +1,43 @@
+[gd_scene load_steps=2 format=3 uid="uid://ce8bsk4c1q845"]
+
+[ext_resource type="Script" uid="uid://kx27fccpvl2q" path="res://scripts/UI.gd" id="1_1x8ju"]
+
+[node name="HUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1x8ju")
+metadata/_edit_use_anchors_ = true
+
+[node name="TopLeft" type="MarginContainer" parent="."]
+layout_mode = 1
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 56.0
+offset_bottom = 56.0
+
+[node name="Panel" type="VBoxContainer" parent="TopLeft"]
+layout_mode = 2
+
+[node name="CurrentPlayerLabel" type="Label" parent="TopLeft/Panel"]
+layout_mode = 2
+text = "Текущий игрок: —"
+
+[node name="StatusLabel" type="Label" parent="TopLeft/Panel"]
+layout_mode = 2
+text = "Статус: ожидаю выбор источника"
+
+[node name="ButtonsRow" type="HBoxContainer" parent="TopLeft/Panel"]
+layout_mode = 2
+
+[node name="RestartButton" type="Button" parent="TopLeft/Panel/ButtonsRow"]
+layout_mode = 2
+text = "Restart (R)"
+
+[node name="LogBox" type="RichTextLabel" parent="TopLeft/Panel"]
+layout_mode = 2
+scroll_following = true
+vertical_alignment = 3
