@@ -33,14 +33,21 @@ const FALLBACK_COLOR: Color = Color(0.6, 0.6, 0.6, 1.0)
 
 ## ===== Состояние =====
 var _units: int = 0
+var units: int:
+        get = get_units
+        set = set_units
 
 func _ready() -> void:
-	input_pickable = allow_clicks
-	_apply_rect_size()
-	_units = start_units
-	_update_label()
-	_apply_controller_color()
-	self.input_event.connect(_on_area_input_event)
+        input_pickable = allow_clicks
+        if _color_rect:
+                _color_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        if _unit_label:
+                _unit_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        _apply_rect_size()
+        _units = start_units
+        _update_label()
+        _apply_controller_color()
+        self.input_event.connect(_on_area_input_event)
 
 func _apply_rect_size() -> void:
 	## 1) Совмещаем коллизию с визуалом
@@ -112,4 +119,4 @@ func _on_area_input_event(viewport: Viewport, event: InputEvent, shape_idx: int)
 
 ## ===== Утилита для будущего роста =====
 func grow_once() -> void:
-	add_units(growth_per_tick)
+        add_units(growth_per_tick)
