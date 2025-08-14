@@ -35,6 +35,7 @@ var _cols: int = 0
 var _phase: int = SelectionPhase.IDLE
 var _source_id: int = -1
 var _current_player: int = PLAYER_HUMAN ## Шаг 5 будет переключать ход
+var _game_over: bool = false
 
 func _ready() -> void:
 	## Найдём карту
@@ -81,11 +82,13 @@ func _cache_map_state() -> void:
 			_territories[id] = t
 
 func _on_map_territory_clicked(id: int) -> void:
-	if id < 0 or id >= _territories.size():
-		return
-	var clicked: Territory = _territories[id]
-	if clicked == null:
-		return
+        if _game_over:
+                return
+        if id < 0 or id >= _territories.size():
+                return
+        var clicked: Territory = _territories[id]
+        if clicked == null:
+                return
 
 	match _phase:
 		SelectionPhase.IDLE:
@@ -175,14 +178,19 @@ func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 			[src.territory_id, dst.territory_id, attackers, dst_units_before, defenders_left])
 
 func _check_victory() -> void:
-	var found_ctrls := {}
-	for t in _territories:
-		if t == null:
-			continue
-		found_ctrls[t.get_controller_id()] = true
-	if found_ctrls.size() == 1:
-		var only_ctrl: int = -1
-		for k in found_ctrls.keys():
-			only_ctrl = int(k)
-		gm_log.emit("=== ПОБЕДА! Контроллер %d владеет всеми территориями ===" % only_ctrl)
-		gm_status.emit("победа!")
+        var found_ctrls := {}
+        for t in _territories:
+                if t == null:
+                        continue
+                found_ctrls[t.get_controller_id()] = true
+        if found_ctrls.size() == 1:
+                var only_ctrl: int = -1
+                for k in found_ctrls.keys():
+                        only_ctrl = int(k)
+                gm_log.emit("=== ПОБЕДА! Контроллер %d владеет всеми территориями ===" % only_ctrl)
+                gm_status.emit("победа!")
+                _game_over = true
+                for t in _territories:
+                        if t != null:
+                                t.allow_clicks = false
+                                t.input_pickable = false
