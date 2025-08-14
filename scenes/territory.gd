@@ -1,56 +1,57 @@
 extends Area2D
 class_name Territory
 
-# ===== Сигналы =====
-signal territory_clicked(territory: Territory)
+## ===== Сигналы =====
+signal clicked(id: int)
 signal units_changed(territory: Territory, new_units: int)
 signal controller_changed(territory: Territory, new_controller_id: int)
 
-# ===== Экспортируемые параметры =====
+## ===== Экспортируемые параметры =====
 @export var territory_id: int = -1
-@export var controller_id: int = 0 # 0 — человек, 1 — ИИ_1, 2 — ИИ_2
+@export var controller_id: int = 0 ## 0 — человек, 1 — ИИ_1, 2 — ИИ_2
 @export var start_units: int = 10
 @export var allow_clicks: bool = true
 @export var rect_size: Vector2 = Vector2(200, 120)
 @export var growth_per_tick: int = 1
 
-# ===== Константы =====
+## ===== Константы =====
 const CONTROLLER_HUMAN: int = 0
 const CONTROLLER_AI_1: int = 1
 const CONTROLLER_AI_2: int = 2
 
 const CONTROLLER_COLORS: Array[Color] = [
-	Color(0.20, 0.65, 1.00, 1.0), # HUMAN — голубой
-	Color(1.00, 0.45, 0.20, 1.0), # AI_1 — оранжевый
-	Color(0.40, 0.90, 0.40, 1.0)  # AI_2 — зелёный
+	Color(0.20, 0.65, 1.00, 1.0), ## HUMAN — голубой
+	Color(1.00, 0.45, 0.20, 1.0), ## AI_1 — оранжевый
+	Color(0.40, 0.90, 0.40, 1.0)  ## AI_2 — зелёный
 ]
 const FALLBACK_COLOR: Color = Color(0.6, 0.6, 0.6, 1.0)
 
-# ===== Узлы =====
+## ===== Узлы =====
 @onready var _color_rect: ColorRect = $ColorRect
 @onready var _unit_label: Label = $UnitLabel
 @onready var _shape: CollisionShape2D = $CollisionShape2D
 
-# ===== Состояние =====
+## ===== Состояние =====
 var _units: int = 0
 var units: int:
-	get = get_units
-	set = set_units
+	get: return get_units()
+	set(value): set_units(value)
 
-# ===== Жизненный цикл =====
+## ===== Жизненный цикл =====
 func _ready() -> void:
 	input_pickable = allow_clicks
 	if _color_rect:
 		_color_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if _unit_label:
 		_unit_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	_apply_rect_size()
+
 	_units = start_units
 	_update_label()
 	_apply_controller_color()
-	self.input_event.connect(_on_area_input_event)
 
-# ===== Настройка размеров =====
+## ===== Настройка размеров =====
 func _apply_rect_size() -> void:
 	# 1) Коллизия
 	if _shape and _shape.shape is RectangleShape2D:
@@ -71,7 +72,7 @@ func _apply_rect_size() -> void:
 		_unit_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_unit_label.text = str(_units)
 
-# ===== Обновление интерфейса =====
+## ===== Обновление интерфейса =====
 func _update_label() -> void:
 	if _unit_label:
 		_unit_label.text = str(_units)
@@ -83,7 +84,7 @@ func _apply_controller_color() -> void:
 	if _color_rect:
 		_color_rect.color = color
 
-# ===== Публичный API =====
+## ===== Публичный API =====
 func get_units() -> int:
 	return _units
 
@@ -110,15 +111,16 @@ func set_controller_color(custom_color: Color) -> void:
 	if _color_rect:
 		_color_rect.color = custom_color
 
-# ===== Обработка ввода =====
-func _on_area_input_event(viewport: Viewport, event: InputEvent, shape_idx: int) -> void:
+## ===== Обработка ввода =====
+func _input_event(viewport: Viewport, event: InputEvent, shape_idx: int) -> void:
 	if not allow_clicks:
 		return
-	if event is InputEventMouseButton and event.pressed:
+	if event is InputEventMouseButton:
 		var mb: InputEventMouseButton = event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			territory_clicked.emit(self)
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			print("Territory clicked id=", territory_id)
+			clicked.emit(territory_id)
 
-# ===== Рост юнитов =====
+## ===== Рост юнитов =====
 func grow_once() -> void:
 	add_units(growth_per_tick)

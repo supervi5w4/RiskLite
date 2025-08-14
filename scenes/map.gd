@@ -3,19 +3,18 @@ class_name Map
 
 signal map_territory_clicked(id: int)
 
+# Подключаем скрипт Territory как ресурс
 const Territory = preload("res://scenes/territory.gd")
 const TerritoryScene: PackedScene = preload("res://scenes/territory.tscn")
 
 var territories: Array[Territory] = []
-var adjacency: Dictionary
-var rows: int
-var cols: int
+var adjacency: Dictionary = {}
+var rows: int = 2
+var cols: int = 5
 
 func _ready() -> void:
-	territories = []
-	adjacency = {}
-	rows = 2
-	cols = 5
+	territories.clear()
+	adjacency.clear()
 
 	var gap: float = 20.0
 
@@ -24,7 +23,8 @@ func _ready() -> void:
 		territory.territory_id = i
 		territory.controller_id = i % 3
 		territory.start_units = 10
-		territory.territory_clicked.connect(_on_territory_clicked)
+		territory.allow_clicks = true
+		territory.clicked.connect(_on_territory_clicked)
 
 		var rect: Vector2 = territory.rect_size
 		var col: int = i % cols
@@ -37,6 +37,7 @@ func _ready() -> void:
 		territories.append(territory)
 		add_child(territory)
 
+	# Создаём словарь соседей
 	for i in range(rows * cols):
 		var neighbors: Array[int] = []
 		var col: int = i % cols
@@ -53,17 +54,14 @@ func _ready() -> void:
 
 		adjacency[i] = neighbors
 
-
-func _on_territory_clicked(territory: Territory) -> void:
-	print("Клик по территории id=", territory.territory_id)
-	map_territory_clicked.emit(territory.territory_id)
-
+func _on_territory_clicked(id: int) -> void:
+	print("Клик по территории id=", id)
+	map_territory_clicked.emit(id)
 
 func get_territory_by_id(id: int) -> Territory:
 	if id >= 0 and id < territories.size():
 		return territories[id]
 	return null
-
 
 func get_neighbors(id: int) -> Array[int]:
 	if id in adjacency:

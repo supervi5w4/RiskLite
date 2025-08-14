@@ -1,0 +1,43 @@
+[gd_scene load_steps=4 format=3 uid="uid://bhe6d12xxkr0u"]
+
+[ext_resource type="Script" uid="uid://dmo3qvoejfqeu" path="res://scenes/main.gd" id="1_elqb8"]
+[ext_resource type="PackedScene" uid="uid://3u1eouhh6x8w" path="res://scenes/Map.tscn" id="2_vnqqg"]
+[ext_resource type="Script" uid="uid://bia2tp4y0aifk" path="res://scenes/game_manager.gd" id="3_0bbpv"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_elqb8")
+
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 27.445
+offset_bottom = 32.365
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(46.64, 22.24)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+color = Color(0.117647, 0.141176, 0.188235, 1)
+
+[node name="Map" parent="." instance=ExtResource("2_vnqqg")]
+
+[node name="TitleLabel" type="Label" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -83.0
+offset_top = -11.5
+offset_right = 83.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+text = "Risk?lite (Godot 4.4.1)"
+
+[node name="GameManager" type="Node" parent="."]
+script = ExtResource("3_0bbpv")
+map_path = NodePath("../Map")
