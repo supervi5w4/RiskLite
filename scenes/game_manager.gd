@@ -36,6 +36,17 @@ var _source_id: int = -1
 var _current_player: int = PLAYER_HUMAN ## Шаг 5 будет переключать ход
 var _game_over: bool = false
 
+func _controller_name(controller_id: int) -> String:
+	match controller_id:
+		PLAYER_HUMAN:
+			return "Человек"
+		PLAYER_AI_1:
+			return "ИИ-1"
+		PLAYER_AI_2:
+			return "ИИ-2"
+		_:
+			return str(controller_id)
+
 func _ready() -> void:
 	# Найдём карту
 	if map_path == NodePath():
@@ -111,7 +122,8 @@ func _handle_pick_source(src: Territory) -> void:
 	_source_id = src.territory_id
 	_phase = SelectionPhase.SOURCE_SELECTED
 	gm_status.emit("выбери цель (соседнюю территорию)")
-	gm_log.emit("Источник выбран: id=%d (units=%d), планируем отправить=%d" % [src.territory_id, units, to_send])
+	gm_log.emit("Источник выбран: id=%d (units=%d), планируем отправить=%d" %
+		[src.territory_id, units, to_send])
 
 func _handle_pick_target(dst: Territory) -> void:
 	if _source_id == -1:
@@ -129,7 +141,8 @@ func _handle_pick_target(dst: Territory) -> void:
 	var neighbors: Array[int] = _map.get_neighbors(_source_id)
 	if dst.territory_id not in neighbors:
 		gm_status.emit("цель не является соседом")
-		gm_log.emit("Отказ: цель id=%d не сосед источника id=%d" % [dst.territory_id, _source_id])
+		gm_log.emit("Отказ: цель id=%d не сосед источника id=%d" %
+			[dst.territory_id, _source_id])
 		return
 
 	var available: int = src.get_units()
@@ -187,8 +200,9 @@ func _check_victory() -> void:
 		var only_ctrl: int = -1
 		for k in found_ctrls.keys():
 			only_ctrl = int(k)
-		gm_log.emit("=== ПОБЕДА! Контроллер %d владеет всеми территориями ===" % only_ctrl)
-		gm_status.emit("победа!")
+		var winner_name := _controller_name(only_ctrl)
+		gm_log.emit("=== ПОБЕДА! Контроллер %s владеет всеми территориями ===" % winner_name)
+		gm_status.emit("победа: %s" % winner_name)
 		_game_over = true
 		for t in _territories:
 			if t != null:
