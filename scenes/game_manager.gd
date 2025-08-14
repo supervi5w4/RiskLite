@@ -168,7 +168,7 @@ func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 	print("--- БОЙ ---")
 	print(
 		"Источник id=", src.territory_id, " (ctrl=", src_ctrl, ", units=", src_units_before, ")",
-		" → Цель id=", dst.territория_id, " (ctrl=", dst_ctrl, ", units=", dst_units_before, ")",
+		" → Цель id=", dst.territory_id, " (ctrl=", dst_ctrl, ", units=", dst_units_before, ")",
 		"; отправляем=", attackers
 	)
 
