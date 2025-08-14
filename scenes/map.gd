@@ -12,59 +12,60 @@ var rows: int
 var cols: int
 
 func _ready() -> void:
-	territories = []
-	adjacency = {}
-	rows = 2
-	cols = 5
+        territories = []
+        adjacency = {}
+        rows = 2
+        cols = 5
 
-	var gap: float = 20.0
+        var gap: float = 20.0
 
-	for i in range(rows * cols):
-		var territory: Territory = TerritoryScene.instantiate()
-		territory.territory_id = i
-		territory.controller_id = i % 3
-		territory.start_units = 10
-		territory.territory_clicked.connect(_on_territory_clicked)
+        for i in range(rows * cols):
+                var territory: Territory = TerritoryScene.instantiate()
+                territory.territory_id = i
+                territory.controller_id = i % 3
+                territory.start_units = 10
+                territory.territory_clicked.connect(_on_territory_clicked)
 
-		var rect: Vector2 = territory.rect_size
-		var col: int = i % cols
-		var row: int = i / cols
-		territory.position = Vector2(
-			col * (rect.x + gap),
-			row * (rect.y + gap)
-		)
+                var rect: Vector2 = territory.rect_size
+                var col: int = i % cols
+                var row: int = i / cols
+                territory.position = Vector2(
+                        col * (rect.x + gap),
+                        row * (rect.y + gap)
+                )
 
-		territories.append(territory)
-		add_child(territory)
+                territories.append(territory)
+                add_child(territory)
 
-	for i in range(rows * cols):
-		var neighbors: Array[int] = []
-		var col: int = i % cols
-		var row: int = i / cols
+        for i in range(rows * cols):
+                var neighbors: Array[int] = []
+                var col: int = i % cols
+                var row: int = i / cols
 
-		if col > 0:
-			neighbors.append(i - 1)
-		if col < cols - 1:
-			neighbors.append(i + 1)
-		if row > 0:
-			neighbors.append(i - cols)
-		if row < rows - 1:
-			neighbors.append(i + cols)
+                if col > 0:
+                        neighbors.append(i - 1)
+                if col < cols - 1:
+                        neighbors.append(i + 1)
+                if row > 0:
+                        neighbors.append(i - cols)
+                if row < rows - 1:
+                        neighbors.append(i + cols)
 
-		adjacency[i] = neighbors
+                adjacency[i] = neighbors
 
 
 func _on_territory_clicked(territory: Territory) -> void:
-	map_territory_clicked.emit(territory.territory_id)
+        print("Клик по территории id=", territory.territory_id)
+        map_territory_clicked.emit(territory.territory_id)
 
 
 func get_territory_by_id(id: int) -> Territory:
-	if id >= 0 and id < territories.size():
-		return territories[id]
-	return null
+        if id >= 0 and id < territories.size():
+                return territories[id]
+        return null
 
 
 func get_neighbors(id: int) -> Array[int]:
-	if id in adjacency:
-		return adjacency[id]
-	return []
+        if id in adjacency:
+                return adjacency[id]
+        return []
