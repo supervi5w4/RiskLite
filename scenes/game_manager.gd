@@ -37,15 +37,12 @@ var _current_player: int = PLAYER_HUMAN ## Шаг 5 будет переключ�
 var _game_over: bool = false
 
 func _controller_name(controller_id: int) -> String:
-	match controller_id:
-		PLAYER_HUMAN:
-			return "Человек"
-		PLAYER_AI_1:
-			return "ИИ-1"
-		PLAYER_AI_2:
-			return "ИИ-2"
-		_:
-			return str(controller_id)
+	var names := {
+		PLAYER_HUMAN: "Человек",
+		PLAYER_AI_1: "ИИ‑1",
+		PLAYER_AI_2: "ИИ‑2",
+	}
+	return names.get(controller_id, str(controller_id))
 
 func _ready() -> void:
 	# Найдём карту
