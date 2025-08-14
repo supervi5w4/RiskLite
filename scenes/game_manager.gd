@@ -92,10 +92,10 @@ func _on_map_territory_clicked(id: int) -> void:
 # Выбор источника
 # -------------------------------
 func _handle_pick_source(src: Territory) -> void:
-	print("Попытка выбрать источник id=", src.territory_id)
-	if src.get_controller_id() != PLAYER_HUMAN:
-		print("Источник отклонён: это не территория игрока.")
-		return
+        print("Попытка выбрать источник id=", src.territory_id)
+        if src.controller_id != PLAYER_HUMAN:
+                print("Источник отклонён: это не территория игрока.")
+                return
 
         var units: int = src.get_units()
         var to_send: int = _compute_send_amount(units)
@@ -172,8 +172,8 @@ func _compute_send_amount(available: int) -> int:
 func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
         var src_units_before: int = src.get_units()
         var dst_units_before: int = dst.get_units()
-        var src_ctrl: int = src.get_controller_id()
-        var dst_ctrl: int = dst.get_controller_id()
+        var src_ctrl: int = src.controller_id
+        var dst_ctrl: int = dst.controller_id
 
 	print("--- БОЙ ---")
 	print(
@@ -208,7 +208,7 @@ func _check_victory() -> void:
         var found_ctrls: Dictionary = {}
         for t in _territories:
                 if t:
-                        found_ctrls[t.get_controller_id()] = true
+                        found_ctrls[t.controller_id] = true
 
         if found_ctrls.size() == 1:
                 var only_ctrl: int = -1
