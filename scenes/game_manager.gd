@@ -72,6 +72,7 @@ func _cache_map_state() -> void:
 # Обработка кликов по территориям
 # -------------------------------
 func _on_map_territory_clicked(id: int) -> void:
+	print("Клик по территории: ", id)
 	if id < 0 or id >= _territories.size():
 		return
 	var clicked: Territory = _territories[id]
