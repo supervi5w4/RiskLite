@@ -2,7 +2,8 @@ extends Area2D
 class_name Territory
 
 # ===== Сигналы =====
-signal territory_clicked(territory: Territory)
+# Срабатывает при клике по территории
+signal clicked(id: int)
 signal units_changed(territory: Territory, new_units: int)
 signal controller_changed(territory: Territory, new_controller_id: int)
 
@@ -47,8 +48,7 @@ func _ready() -> void:
 	_apply_rect_size()
 	_units = start_units
 	_update_label()
-	_apply_controller_color()
-	self.input_event.connect(_on_area_input_event)
+        _apply_controller_color()
 
 # ===== Настройка размеров =====
 func _apply_rect_size() -> void:
@@ -111,13 +111,14 @@ func set_controller_color(custom_color: Color) -> void:
 		_color_rect.color = custom_color
 
 # ===== Обработка ввода =====
-func _on_area_input_event(viewport: Viewport, event: InputEvent, shape_idx: int) -> void:
-	if not allow_clicks:
-		return
-	if event is InputEventMouseButton and event.pressed:
-		var mb: InputEventMouseButton = event as InputEventMouseButton
-		if mb.button_index == MOUSE_BUTTON_LEFT:
-			territory_clicked.emit(self)
+func _input_event(viewport: Viewport, event: InputEvent, shape_idx: int) -> void:
+        if not allow_clicks:
+                return
+        if event is InputEventMouseButton and event.pressed:
+                var mb: InputEventMouseButton = event as InputEventMouseButton
+                if mb.button_index == MOUSE_BUTTON_LEFT:
+                        print("Territory clicked id=", territory_id)
+                        clicked.emit(territory_id)
 
 # ===== Рост юнитов =====
 func grow_once() -> void:

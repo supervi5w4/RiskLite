@@ -19,12 +19,13 @@ func _ready() -> void:
 
 	var gap: float = 20.0
 
-	for i in range(rows * cols):
-		var territory: Territory = TerritoryScene.instantiate()
-		territory.territory_id = i
-		territory.controller_id = i % 3
-		territory.start_units = 10
-		territory.territory_clicked.connect(_on_territory_clicked)
+        for i in range(rows * cols):
+                var territory: Territory = TerritoryScene.instantiate()
+                territory.territory_id = i
+                territory.controller_id = i % 3
+                territory.start_units = 10
+                territory.allow_clicks = true
+                territory.clicked.connect(_on_territory_clicked)
 
 		var rect: Vector2 = territory.rect_size
 		var col: int = i % cols
@@ -54,9 +55,9 @@ func _ready() -> void:
 		adjacency[i] = neighbors
 
 
-func _on_territory_clicked(territory: Territory) -> void:
-	print("Клик по территории id=", territory.territory_id)
-	map_territory_clicked.emit(territory.territory_id)
+func _on_territory_clicked(id: int) -> void:
+        print("Клик по территории id=", id)
+        map_territory_clicked.emit(id)
 
 
 func get_territory_by_id(id: int) -> Territory:
