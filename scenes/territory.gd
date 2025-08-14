@@ -35,6 +35,7 @@ const FALLBACK_COLOR: Color = Color(0.6, 0.6, 0.6, 1.0)
 var _units: int = 0
 
 func _ready() -> void:
+	input_pickable = allow_clicks
 	_apply_rect_size()
 	_units = start_units
 	_update_label()
