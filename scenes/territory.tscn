@@ -8,6 +8,13 @@ size = Vector2(200, 120)
 [node name="Territory" type="Area2D"]
 position = Vector2(1, 2)
 script = ExtResource("1_22d1k")
+territory_id = null
+controller_id = null
+start_units = null
+allow_clicks = null
+rect_size = null
+growth_per_tick = null
+controller_colors = null
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_uiw4v")

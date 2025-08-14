@@ -53,7 +53,6 @@ func _ready() -> void:
 	_cache_map_state()
 	print("GameManager готов. Территорий: ", _territories.size())
 
-
 # -------------------------------
 # Сбор ссылок на все территории
 # -------------------------------
@@ -67,7 +66,6 @@ func _cache_map_state() -> void:
 		var t: Territory = _map.get_territory_by_id(id)
 		if t:
 			_territories[id] = t
-
 
 # -------------------------------
 # Обработка кликов по территориям
@@ -87,7 +85,6 @@ func _on_map_territory_clicked(id: int) -> void:
 		SelectionPhase.SOURCE_SELECTED:
 			_handle_pick_target(clicked)
 
-
 # -------------------------------
 # Выбор источника
 # -------------------------------
@@ -97,7 +94,7 @@ func _handle_pick_source(src: Territory) -> void:
 		print("Источник отклонён: это не территория игрока.")
 		return
 
-	var units: int = src.get_units()
+	var units: int = src.units
 	var to_send: int = _compute_send_amount(units)
 	if to_send < MIN_SENT_UNITS:
 		print("Источник отклонён: недостаточно юнитов.")
@@ -110,7 +107,6 @@ func _handle_pick_source(src: Territory) -> void:
 		", юнитов=", units,
 		", отправим=", to_send
 	)
-
 
 # -------------------------------
 # Выбор цели и атака
@@ -133,7 +129,7 @@ func _handle_pick_target(dst: Territory) -> void:
 		print("Цель отклонена: территория не сосед.")
 		return
 
-	var available: int = src.get_units()
+	var available: int = src.units
 	var to_send: int = _compute_send_amount(available)
 	if to_send < MIN_SENT_UNITS:
 		print("Атака отменена: недостаточно юнитов.")
@@ -153,7 +149,6 @@ func _handle_pick_target(dst: Territory) -> void:
 	_source_id = -1
 	_check_victory()
 
-
 # -------------------------------
 # Расчёт отправляемых юнитов
 # -------------------------------
@@ -165,13 +160,12 @@ func _compute_send_amount(available: int) -> int:
 		half = MIN_SENT_UNITS
 	return clamp(half, 0, available)
 
-
 # -------------------------------
 # Бой
 # -------------------------------
 func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
-	var src_units_before: int = src.get_units()
-	var dst_units_before: int = dst.get_units()
+	var src_units_before: int = src.units
+	var dst_units_before: int = dst.units
 	var src_ctrl: int = src.controller_id
 	var dst_ctrl: int = dst.controller_id
 
@@ -182,23 +176,22 @@ func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 		"; отправляем=", attackers
 	)
 
-	src.set_units(src_units_before - attackers)
+	src.units = src_units_before - attackers
 
 	if attackers > dst_units_before:
 		var remain: int = attackers - dst_units_before
-		dst.set_units(remain)
+		dst.units = remain
 		dst.set_controller_id(src_ctrl)
 		print("Захват! Новые units цели=", remain, ", новый контроллер=", src_ctrl)
 	else:
 		var defenders_left: int = dst_units_before - attackers
-		dst.set_units(defenders_left)
+		dst.units = defenders_left
 		print("Без захвата. У защитника осталось=", defenders_left, ", контроллер прежний=", dst_ctrl)
 
 	print(
-		"Итог боя: units источника=", src.get_units(),
-		", units цели=", dst.get_units()
+		"Итог боя: units источника=", src.units,
+		", units цели=", dst.units
 	)
-
 
 # -------------------------------
 # Проверка победы
