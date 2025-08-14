@@ -1,6 +1,9 @@
 extends Node
 class_name GameManager
 
+const Map = preload("res://scenes/map.gd")
+const Territory = preload("res://scenes/territory.gd")
+
 ## -------------------------------
 ## Настройки/константы (MVP)
 ## -------------------------------
@@ -23,7 +26,7 @@ enum SelectionPhase { IDLE, SOURCE_SELECTED }
 ## Ссылки/экспорт
 ## -------------------------------
 
-@export var map_path: NodePath ## Укажи в инспекторе путь до узла карты (Map)
+@export var map_path: NodePath  ## Укажи в инспекторе путь до узла карты (Map)
 
 ## Типизированные ссылки; ожидаем, что у тебя class_name Map/Territory уже объявлены
 var _map: Map
@@ -39,21 +42,9 @@ var _source_id: int = -1
 ## Жизненный цикл
 ## -------------------------------
 
+
 func _ready() -> void:
-	## Ищем карту
-	if map_path == NodePath():
-		push_warning("GameManager: map_path не задан. Укажи путь до узла Map в инспекторе.")
-		return
-
-	var node := get_node(map_path)
-	if node == null:
-		push_warning("GameManager: по указанному map_path узел не найден.")
-		return
-
-	_map = node as Map
-	if _map == null:
-		push_warning("GameManager: узел по map_path не является Map.")
-		return
+	_map = get_node(map_path) as Map
 
 	## Подпишемся на клики карты
 	_map.map_territory_clicked.connect(_on_map_territory_clicked)
@@ -69,6 +60,7 @@ func _ready() -> void:
 
 	print("GameManager готов. Территорий: ", _territories.size())
 
+
 ## Собираем ссылки на все территории и их размерность
 func _cache_map_state() -> void:
 	_territories.clear()
@@ -81,9 +73,11 @@ func _cache_map_state() -> void:
 		if t != null:
 			_territories[id] = t
 
+
 ## -------------------------------
 ## Обработка кликов по территории
 ## -------------------------------
+
 
 func _on_map_territory_clicked(id: int) -> void:
 	if id < 0 or id >= _territories.size():
@@ -98,6 +92,7 @@ func _on_map_territory_clicked(id: int) -> void:
 			_handle_pick_source(clicked)
 		SelectionPhase.SOURCE_SELECTED:
 			_handle_pick_target(clicked)
+
 
 ## Выбор источника: только территория игрока и с достаточными юнитами
 func _handle_pick_source(src: Territory) -> void:
@@ -114,6 +109,7 @@ func _handle_pick_source(src: Territory) -> void:
 	_source_id = src.territory_id
 	_phase = SelectionPhase.SOURCE_SELECTED
 	print("Источник выбран → id=", _source_id, ", юнитов=", units, ", отправим при атаке=", to_send)
+
 
 ## Выбор цели и атака (если соседи)
 func _handle_pick_target(dst: Territory) -> void:
@@ -151,6 +147,7 @@ func _handle_pick_target(dst: Territory) -> void:
 	_source_id = -1
 	_check_victory()
 
+
 ## Считаем, сколько юнитов отправить (MVP: 50% от имеющихся, минимум 1)
 func _compute_send_amount(available: int) -> int:
 	if available <= 0:
@@ -161,11 +158,12 @@ func _compute_send_amount(available: int) -> int:
 	## В этом MVP источник может оставить 0 — это допустимо в наших правилах.
 	return clamp(half, 0, available)
 
+
 ## -------------------------------
 ## БОЙ (правила из ТЗ)
 ## -------------------------------
 ## Правила:
-## - если атакующих строго больше защитников → территория переходит к атакующему, 
+## - если атакующих строго больше защитников → территория переходит к атакующему,
 ##   защитники погибают, на новой территории остаётся (атакующие - защитники)
 ## - если атакующих меньше или РАВНО → все атакующие погибают,
 ##   защитники теряют столько же, сколько пришло атакующих (могут стать 0)
@@ -176,9 +174,24 @@ func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 	var dst_ctrl: int = dst.get_controller_id()
 
 	print("--- БОЙ ---")
-	print("Источник id=", src.territory_id, " (ctrl=", src_ctrl, ", units=", src_units_before, ")",
-		  " → Цель id=", dst.territory_id, " (ctrl=", dst_ctrl, ", units=", dst_units_before, ")",
-		  " ; отправляем=", attackers)
+	print(
+		"Источник id=",
+		src.territory_id,
+		" (ctrl=",
+		src_ctrl,
+		", units=",
+		src_units_before,
+		")",
+		" → Цель id=",
+		dst.territory_id,
+		" (ctrl=",
+		dst_ctrl,
+		", units=",
+		dst_units_before,
+		")",
+		" ; отправляем=",
+		attackers
+	)
 
 	## Списываем атакующих у источника
 	src.set_units(src_units_before - attackers)
@@ -194,7 +207,10 @@ func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 		var defenders_left: int = dst_units_before - attackers
 		dst.set_units(defenders_left)
 		## Владелец НЕ меняется
-		print("Без захвата. У защитника осталось=", defenders_left, ", контроллер прежний=", dst_ctrl)
+		print(
+			"Без захвата. У защитника осталось=", defenders_left, ", контроллер прежний=", dst_ctrl
+		)
+
 
 ## -------------------------------
 ## Победа
