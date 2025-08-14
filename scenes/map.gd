@@ -55,6 +55,7 @@ func _ready() -> void:
 
 
 func _on_territory_clicked(territory: Territory) -> void:
+	print("Клик по территории id=", territory.territory_id)
 	map_territory_clicked.emit(territory.territory_id)
 
 

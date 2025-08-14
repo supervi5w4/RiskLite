@@ -45,6 +45,7 @@ func _ready() -> void:
 
 	# Подписываемся на сигнал клика по территории
 	_map.map_territory_clicked.connect(_on_map_territory_clicked)
+	print("Сигнал map_territory_clicked подключен")
 
 	# Ждём кадр, чтобы карта успела создать территории
 	await get_tree().process_frame
@@ -91,6 +92,7 @@ func _on_map_territory_clicked(id: int) -> void:
 # Выбор источника
 # -------------------------------
 func _handle_pick_source(src: Territory) -> void:
+	print("Попытка выбрать источник id=", src.territory_id)
 	if src.get_controller_id() != PLAYER_HUMAN:
 		print("Источник отклонён: это не территория игрока.")
 		return
@@ -114,6 +116,7 @@ func _handle_pick_source(src: Territory) -> void:
 # Выбор цели и атака
 # -------------------------------
 func _handle_pick_target(dst: Territory) -> void:
+	print("Попытка выбрать цель id=", dst.territory_id)
 	if _source_id == -1:
 		_phase = SelectionPhase.IDLE
 		return
@@ -138,7 +141,14 @@ func _handle_pick_target(dst: Territory) -> void:
 		_source_id = -1
 		return
 
+	print(
+		"Атакуем цель id=", dst.territory_id,
+		" из источника id=", _source_id,
+		", отправляем=", to_send
+	)
 	_resolve_battle(src, dst, to_send)
+	print("Бой завершён")
+
 	_phase = SelectionPhase.IDLE
 	_source_id = -1
 	_check_victory()
@@ -184,11 +194,17 @@ func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 		dst.set_units(defenders_left)
 		print("Без захвата. У защитника осталось=", defenders_left, ", контроллер прежний=", dst_ctrl)
 
+	print(
+		"Итог боя: units источника=", src.get_units(),
+		", units цели=", dst.get_units()
+	)
+
 
 # -------------------------------
 # Проверка победы
 # -------------------------------
 func _check_victory() -> void:
+	print("Проверка победы...")
 	var found_ctrls := {}
 	for t in _territories:
 		if t:
