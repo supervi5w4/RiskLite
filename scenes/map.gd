@@ -7,6 +7,14 @@ signal map_territory_clicked(id: int)
 const Territory = preload("res://scenes/territory.gd")
 const TerritoryScene: PackedScene = preload("res://scenes/territory.tscn")
 
+# Константы игроков из GameManager для назначения контроллеров
+const GameManager = preload("res://scenes/game_manager.gd")
+const PLAYER_CYCLE: Array[int] = [
+        GameManager.PLAYER_HUMAN,
+        GameManager.PLAYER_AI_1,
+        GameManager.PLAYER_AI_2,
+]
+
 var territories: Array[Territory] = []
 var adjacency: Dictionary = {}
 var rows: int = 2
@@ -21,7 +29,7 @@ func _ready() -> void:
 	for i in range(rows * cols):
 		var territory: Territory = TerritoryScene.instantiate()
 		territory.territory_id = i
-		territory.controller_id = i % 3
+		territory.controller_id = PLAYER_CYCLE[i % PLAYER_CYCLE.size()]
 		territory.start_units = 10
 		territory.allow_clicks = true
 		territory.clicked.connect(_on_territory_clicked)
