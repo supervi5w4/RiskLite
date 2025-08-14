@@ -3,9 +3,10 @@ class_name Map
 
 signal map_territory_clicked(id: int)
 
+const Territory = preload("res://scenes/territory.gd")
 const TerritoryScene: PackedScene = preload("res://scenes/territory.tscn")
 
-var territories: Array[Territory]
+var territories: Array[Territory] = []
 var adjacency: Dictionary
 var rows: int
 var cols: int

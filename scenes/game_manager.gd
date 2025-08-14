@@ -1,52 +1,82 @@
-# scenes/game_manager.gd
 extends Node
 class_name GameManager
 
-# --- Константы и настройки ---
-const PLAYER_HUMAN := 0
-const PLAYER_AI_1 := 1
-const PLAYER_AI_2 := 2
-const SEND_FRACTION_DEFAULT := 0.5
-const MIN_SENT_UNITS := 1
+# -------------------------------
+# Подключаем пользовательские типы
+# -------------------------------
+const Map = preload("res://scenes/map.gd")
+const Territory = preload("res://scenes/territory.gd")
+
+# -------------------------------
+# Константы и настройки
+# -------------------------------
+const PLAYER_HUMAN: int = 0
+const PLAYER_AI_1: int = 1
+const PLAYER_AI_2: int = 2
+const SEND_FRACTION_DEFAULT: float = 0.5
+const MIN_SENT_UNITS: int = 1
+
 enum SelectionPhase { IDLE, SOURCE_SELECTED }
 
-# --- Экспортируемая ссылка на карту ---
+# -------------------------------
+# Экспортируемая ссылка на карту
+# -------------------------------
 @export var map_path: NodePath
 
-# --- Внутреннее состояние ---
+# -------------------------------
+# Внутреннее состояние
+# -------------------------------
 var _map: Map
 var _territories: Array[Territory] = []
-var _phase: SelectionPhase = SelectionPhase.IDLE
+var _rows: int = 0
+var _cols: int = 0
+var _phase: int = SelectionPhase.IDLE
 var _source_id: int = -1
 
-# --- Жизненный цикл ---
+# -------------------------------
+# Жизненный цикл
+# -------------------------------
 func _ready() -> void:
-	_map = get_node_or_null(map_path) as Map
+	# Находим и приводим карту
+	_map = get_node(map_path) as Map
 	if _map == null:
 		push_warning("GameManager: узел по map_path не найден или не Map")
 		return
 
+	# Подписываемся на сигнал клика по территории
 	_map.map_territory_clicked.connect(_on_map_territory_clicked)
+
+	# Ждём кадр, чтобы карта успела создать территории
 	await get_tree().process_frame
+
 	_cache_map_state()
-	print("GameManager готов. Территорий: %d" % _territories.size())
+	print("GameManager готов. Территорий: ", _territories.size())
 
 
-# --- Сбор ссылок на все территории ---
+# -------------------------------
+# Сбор ссылок на все территории
+# -------------------------------
 func _cache_map_state() -> void:
 	_territories.clear()
-	var total := _map.rows * _map.cols
+	_rows = _map.rows
+	_cols = _map.cols
+	var total := _rows * _cols
+	_territories.resize(total)
 	for id in range(total):
-		_territories.append(_map.get_territory_by_id(id))
+		var t: Territory = _map.get_territory_by_id(id)
+		if t:
+			_territories[id] = t
 
 
-# --- Обработка кликов по территориям ---
+# -------------------------------
+# Обработка кликов по территориям
+# -------------------------------
 func _on_map_territory_clicked(id: int) -> void:
-	print("Клик по территории id=", id)
+	print("Клик по территории: ", id)
 	if id < 0 or id >= _territories.size():
 		return
 
-	var clicked := _territories[id]
+	var clicked: Territory = _territories[id]
 	if clicked == null:
 		return
 
@@ -57,27 +87,32 @@ func _on_map_territory_clicked(id: int) -> void:
 			_handle_pick_target(clicked)
 
 
-# --- Выбор источника ---
+# -------------------------------
+# Выбор источника
+# -------------------------------
 func _handle_pick_source(src: Territory) -> void:
 	if src.get_controller_id() != PLAYER_HUMAN:
-		print("Источник отклонён: территория не игрока")
+		print("Источник отклонён: это не территория игрока.")
 		return
 
 	var units := src.get_units()
 	var to_send := _compute_send_amount(units)
 	if to_send < MIN_SENT_UNITS:
-		print("Источник отклонён: недостаточно юнитов")
+		print("Источник отклонён: недостаточно юнитов.")
 		return
 
 	_source_id = src.territory_id
 	_phase = SelectionPhase.SOURCE_SELECTED
 	print(
-		"Источник выбран → id=%d, юнитов=%d, отправим=%d"
-		% [_source_id, units, to_send]
+		"Источник выбран → id=", _source_id,
+		", юнитов=", units,
+		", отправим=", to_send
 	)
 
 
-# --- Выбор цели и атака ---
+# -------------------------------
+# Выбор цели и атака
+# -------------------------------
 func _handle_pick_target(dst: Territory) -> void:
 	if _source_id == -1:
 		_phase = SelectionPhase.IDLE
@@ -87,18 +122,18 @@ func _handle_pick_target(dst: Territory) -> void:
 	if dst.territory_id == _source_id:
 		_phase = SelectionPhase.IDLE
 		_source_id = -1
-		print("Выбор источника отменён")
+		print("Выбор источника отменён.")
 		return
 
-	var neighbors := _map.get_neighbors(_source_id)
+	var neighbors: Array[int] = _map.get_neighbors(_source_id)
 	if dst.territory_id not in neighbors:
-		print("Цель отклонена: территория не сосед")
+		print("Цель отклонена: территория не сосед.")
 		return
 
 	var available := src.get_units()
 	var to_send := _compute_send_amount(available)
 	if to_send < MIN_SENT_UNITS:
-		print("Атака отменена: недостаточно юнитов")
+		print("Атака отменена: недостаточно юнитов.")
 		_phase = SelectionPhase.IDLE
 		_source_id = -1
 		return
@@ -109,7 +144,9 @@ func _handle_pick_target(dst: Territory) -> void:
 	_check_victory()
 
 
-# --- Расчёт отправляемых юнитов ---
+# -------------------------------
+# Расчёт отправляемых юнитов
+# -------------------------------
 func _compute_send_amount(available: int) -> int:
 	if available <= 0:
 		return 0
@@ -119,7 +156,9 @@ func _compute_send_amount(available: int) -> int:
 	return clamp(half, 0, available)
 
 
-# --- Бой ---
+# -------------------------------
+# Бой
+# -------------------------------
 func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 	var src_units_before := src.get_units()
 	var dst_units_before := dst.get_units()
@@ -128,8 +167,9 @@ func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 
 	print("--- БОЙ ---")
 	print(
-		"Источник id=%d (ctrl=%d, units=%d) → Цель id=%d (ctrl=%d, units=%d); отправляем=%d"
-		% [src.territory_id, src_ctrl, src_units_before, dst.territory_id, dst_ctrl, dst_units_before, attackers]
+		"Источник id=", src.territory_id, " (ctrl=", src_ctrl, ", units=", src_units_before, ")",
+		" → Цель id=", dst.territория_id, " (ctrl=", dst_ctrl, ", units=", dst_units_before, ")",
+		"; отправляем=", attackers
 	)
 
 	src.set_units(src_units_before - attackers)
@@ -138,14 +178,16 @@ func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
 		var remain := attackers - dst_units_before
 		dst.set_units(remain)
 		dst.set_controller_id(src_ctrl)
-		print("Захват! Новые units цели=%d, новый контроллер=%d" % [remain, src_ctrl])
+		print("Захват! Новые units цели=", remain, ", новый контроллер=", src_ctrl)
 	else:
 		var defenders_left := dst_units_before - attackers
 		dst.set_units(defenders_left)
-		print("Без захвата. У защитника осталось=%d, контроллер прежний=%d" % [defenders_left, dst_ctrl])
+		print("Без захвата. У защитника осталось=", defenders_left, ", контроллер прежний=", dst_ctrl)
 
 
-# --- Проверка победы ---
+# -------------------------------
+# Проверка победы
+# -------------------------------
 func _check_victory() -> void:
 	var found_ctrls := {}
 	for t in _territories:
@@ -153,5 +195,7 @@ func _check_victory() -> void:
 			found_ctrls[t.get_controller_id()] = true
 
 	if found_ctrls.size() == 1:
-		var only_ctrl := found_ctrls.keys()[0]
-		print("=== ПОБЕДА! Контроллер %s владеет всеми территориями. ===" % only_ctrl)
+		var only_ctrl := -1
+		for k in found_ctrls.keys():
+			only_ctrl = int(k)
+		print("=== ПОБЕДА! Контроллер ", only_ctrl, " владеет всеми территориями. ===")
