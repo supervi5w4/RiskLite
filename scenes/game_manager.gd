@@ -1,80 +1,88 @@
 extends Node
 class_name GameManager
 
-# -------------------------------
-# Подключаем пользовательские типы
-# -------------------------------
-const Map = preload("res://scenes/map.gd")
-const Territory = preload("res://scenes/territory.gd")
+## -------------------------------
+## Настройки/константы (MVP)
+## -------------------------------
 
-# -------------------------------
-# Константы и настройки
-# -------------------------------
 const PLAYER_HUMAN: int = 0
 const PLAYER_AI_1: int = 1
 const PLAYER_AI_2: int = 2
+
 const SEND_FRACTION_DEFAULT: float = 0.5
 const MIN_SENT_UNITS: int = 1
 
 enum SelectionPhase { IDLE, SOURCE_SELECTED }
 
-# -------------------------------
-# Экспортируемая ссылка на карту
-# -------------------------------
-@export var map_path: NodePath
+## -------------------------------
+## Сигналы для UI
+## -------------------------------
+signal current_player_changed(player_id: int)
+signal gm_status(text: String)
+signal gm_log(text: String)
 
-# -------------------------------
-# Внутреннее состояние
-# -------------------------------
+## -------------------------------
+## Ссылки/экспорт
+## -------------------------------
+@export var map_path: NodePath
+@export var ui_path: NodePath ## <— Укажем в инспекторе на UIRoot/HUD
+
 var _map: Map
 var _territories: Array[Territory] = []
 var _rows: int = 0
 var _cols: int = 0
+
 var _phase: int = SelectionPhase.IDLE
 var _source_id: int = -1
+var _current_player: int = PLAYER_HUMAN ## Шаг 5 будет переключать ход
 
-# -------------------------------
-# Жизненный цикл
-# -------------------------------
 func _ready() -> void:
-	# Находим и приводим карту
-	_map = get_node(map_path) as Map
-	if _map == null:
-		push_warning("GameManager: узел по map_path не найден или не Map")
+	## Найдём карту
+	if map_path == NodePath():
+		push_warning("GameManager: map_path не задан.")
 		return
-
-	# Подписываемся на сигнал клика по территории
+	var node := get_node(map_path)
+	if node == null:
+		push_warning("GameManager: по map_path узел не найден.")
+		return
+	_map = node as Map
+	if _map == null:
+		push_warning("GameManager: узел по map_path не является Map.")
+		return
 	_map.map_territory_clicked.connect(_on_map_territory_clicked)
-	print("Сигнал map_territory_clicked подключен")
 
-	# Ждём кадр, чтобы карта успела создать территории
+	## Найдём HUD (опционально, но желательно)
+	if ui_path != NodePath():
+		var ui_node := get_node(ui_path)
+		if ui_node and ui_node is UI:
+			(ui_node as UI).set_game_manager(self)
+
+	## Ждём 1 кадр, чтобы Map гарантированно сгенерировала сетку
 	await get_tree().process_frame
-
 	_cache_map_state()
-	print("GameManager готов. Территорий: ", _territories.size())
 
-# -------------------------------
-# Сбор ссылок на все территории
-# -------------------------------
+	## Инициализация UI
+	current_player_changed.emit(_current_player)
+	gm_status.emit("ожидаю выбор источника")
+	gm_log.emit("Игра стартовала. Игрок: Человек. Отправка = 50%.")
+
+func get_current_player_id() -> int:
+	return _current_player
+
 func _cache_map_state() -> void:
 	_territories.clear()
 	_rows = _map.rows
 	_cols = _map.cols
-	var total := _rows * _cols
+	var total: int = _rows * _cols
 	_territories.resize(total)
 	for id in range(total):
 		var t: Territory = _map.get_territory_by_id(id)
-		if t:
+		if t != null:
 			_territories[id] = t
 
-# -------------------------------
-# Обработка кликов по территориям
-# -------------------------------
 func _on_map_territory_clicked(id: int) -> void:
-	print("Клик по территории: ", id)
 	if id < 0 or id >= _territories.size():
 		return
-
 	var clicked: Territory = _territories[id]
 	if clicked == null:
 		return
@@ -85,34 +93,25 @@ func _on_map_territory_clicked(id: int) -> void:
 		SelectionPhase.SOURCE_SELECTED:
 			_handle_pick_target(clicked)
 
-# -------------------------------
-# Выбор источника
-# -------------------------------
 func _handle_pick_source(src: Territory) -> void:
-	print("Попытка выбрать источник id=", src.territory_id)
-	if src.controller_id != PLAYER_HUMAN:
-		print("Источник отклонён: это не территория игрока.")
+	if src.get_controller_id() != PLAYER_HUMAN:
+		gm_status.emit("выбран чужой источник — недопустимо")
+		gm_log.emit("Отказ: территория id=%d не под контролем игрока" % src.territory_id)
 		return
 
-	var units: int = src.units
+	var units: int = src.get_units()
 	var to_send: int = _compute_send_amount(units)
 	if to_send < MIN_SENT_UNITS:
-		print("Источник отклонён: недостаточно юнитов.")
+		gm_status.emit("недостаточно юнитов в источнике")
+		gm_log.emit("Отказ: мало юнитов на id=%d (units=%d)" % [src.territory_id, units])
 		return
 
 	_source_id = src.territory_id
 	_phase = SelectionPhase.SOURCE_SELECTED
-	print(
-		"Источник выбран → id=", _source_id,
-		", юнитов=", units,
-		", отправим=", to_send
-	)
+	gm_status.emit("выбери цель (соседнюю территорию)")
+	gm_log.emit("Источник выбран: id=%d (units=%d), планируем отправить=%d" % [src.territory_id, units, to_send])
 
-# -------------------------------
-# Выбор цели и атака
-# -------------------------------
 func _handle_pick_target(dst: Territory) -> void:
-	print("Попытка выбрать цель id=", dst.territory_id)
 	if _source_id == -1:
 		_phase = SelectionPhase.IDLE
 		return
@@ -121,90 +120,69 @@ func _handle_pick_target(dst: Territory) -> void:
 	if dst.territory_id == _source_id:
 		_phase = SelectionPhase.IDLE
 		_source_id = -1
-		print("Выбор источника отменён.")
+		gm_status.emit("выбор источника отменён")
+		gm_log.emit("Отмена выбора источника")
 		return
 
 	var neighbors: Array[int] = _map.get_neighbors(_source_id)
 	if dst.territory_id not in neighbors:
-		print("Цель отклонена: территория не сосед.")
+		gm_status.emit("цель не является соседом")
+		gm_log.emit("Отказ: цель id=%d не сосед источника id=%d" % [dst.territory_id, _source_id])
 		return
 
-	var available: int = src.units
+	var available: int = src.get_units()
 	var to_send: int = _compute_send_amount(available)
 	if to_send < MIN_SENT_UNITS:
-		print("Атака отменена: недостаточно юнитов.")
 		_phase = SelectionPhase.IDLE
 		_source_id = -1
+		gm_status.emit("недостаточно юнитов для атаки")
+		gm_log.emit("Атака отменена: мало юнитов на источнике id=%d" % src.territory_id)
 		return
 
-	print(
-		"Атакуем цель id=", dst.territory_id,
-		" из источника id=", _source_id,
-		", отправляем=", to_send
-	)
 	_resolve_battle(src, dst, to_send)
-	print("Бой завершён")
 
 	_phase = SelectionPhase.IDLE
 	_source_id = -1
+	gm_status.emit("ожидаю выбор источника")
 	_check_victory()
 
-# -------------------------------
-# Расчёт отправляемых юнитов
-# -------------------------------
 func _compute_send_amount(available: int) -> int:
 	if available <= 0:
 		return 0
-	var half := int(floor(float(available) * SEND_FRACTION_DEFAULT))
+	var half: int = int(floor(float(available) * SEND_FRACTION_DEFAULT))
 	if half < MIN_SENT_UNITS and available > 0:
 		half = MIN_SENT_UNITS
 	return clamp(half, 0, available)
 
-# -------------------------------
-# Бой
-# -------------------------------
 func _resolve_battle(src: Territory, dst: Territory, attackers: int) -> void:
-	var src_units_before: int = src.units
-	var dst_units_before: int = dst.units
-	var src_ctrl: int = src.controller_id
-	var dst_ctrl: int = dst.controller_id
+	var src_units_before: int = src.get_units()
+	var dst_units_before: int = dst.get_units()
+	var src_ctrl: int = src.get_controller_id()
+	var dst_ctrl: int = dst.get_controller_id()
 
-	print("--- БОЙ ---")
-	print(
-		"Источник id=", src.territory_id, " (ctrl=", src_ctrl, ", units=", src_units_before, ")",
-		" → Цель id=", dst.territory_id, " (ctrl=", dst_ctrl, ", units=", dst_units_before, ")",
-		"; отправляем=", attackers
-	)
-
-	src.units = src_units_before - attackers
+	src.set_units(src_units_before - attackers)
 
 	if attackers > dst_units_before:
 		var remain: int = attackers - dst_units_before
-		dst.units = remain
+		dst.set_units(remain)
 		dst.set_controller_id(src_ctrl)
-		print("Захват! Новые units цели=", remain, ", новый контроллер=", src_ctrl)
+		gm_log.emit("Захват: %d -> %d ; атак=%d, защ=%d, остаток на цели=%d" %
+			[src.territory_id, dst.territory_id, attackers, dst_units_before, remain])
 	else:
 		var defenders_left: int = dst_units_before - attackers
-		dst.units = defenders_left
-		print("Без захвата. У защитника осталось=", defenders_left, ", контроллер прежний=", dst_ctrl)
+		dst.set_units(defenders_left)
+		gm_log.emit("Без захвата: %d -> %d ; атак=%d, защ=%d, у цели осталось=%d" %
+			[src.territory_id, dst.territory_id, attackers, dst_units_before, defenders_left])
 
-	print(
-		"Итог боя: units источника=", src.units,
-		", units цели=", dst.units
-	)
-
-# -------------------------------
-# Проверка победы
-# -------------------------------
 func _check_victory() -> void:
-	print("Проверка победы...")
-	var found_ctrls: Dictionary = {}
+	var found_ctrls := {}
 	for t in _territories:
-		if t:
-			found_ctrls[t.controller_id] = true
-
+		if t == null:
+			continue
+		found_ctrls[t.get_controller_id()] = true
 	if found_ctrls.size() == 1:
 		var only_ctrl: int = -1
 		for k in found_ctrls.keys():
 			only_ctrl = int(k)
-		print("=== ПОБЕДА! Контроллер ", only_ctrl, " владеет всеми территориями. ===")
+		gm_log.emit("=== ПОБЕДА! Контроллер %d владеет всеми территориями ===" % only_ctrl)
+		gm_status.emit("победа!")

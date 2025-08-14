@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://bhe6d12xxkr0u"]
+[gd_scene load_steps=5 format=3 uid="uid://bhe6d12xxkr0u"]
 
 [ext_resource type="Script" uid="uid://dmo3qvoejfqeu" path="res://scenes/main.gd" id="1_elqb8"]
 [ext_resource type="PackedScene" uid="uid://3u1eouhh6x8w" path="res://scenes/Map.tscn" id="2_vnqqg"]
 [ext_resource type="Script" uid="uid://bia2tp4y0aifk" path="res://scenes/game_manager.gd" id="3_0bbpv"]
+[ext_resource type="PackedScene" uid="uid://ce8bsk4c1q845" path="res://ui/HUD.tscn" id="4_rarhs"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_elqb8")
@@ -41,3 +42,15 @@ text = "Risk?lite (Godot 4.4.1)"
 [node name="GameManager" type="Node" parent="."]
 script = ExtResource("3_0bbpv")
 map_path = NodePath("../Map")
+ui_path = NodePath("../UIRoot/HUD")
+
+[node name="UIRoot" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HUD" parent="UIRoot" instance=ExtResource("4_rarhs")]
+layout_mode = 1
