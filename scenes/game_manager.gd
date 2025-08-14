@@ -4,7 +4,6 @@ class_name GameManager
 ## -------------------------------
 ## Настройки/константы (MVP)
 ## -------------------------------
-
 const PLAYER_HUMAN: int = 0
 const PLAYER_AI_1: int = 1
 const PLAYER_AI_2: int = 2
@@ -25,7 +24,7 @@ signal gm_log(text: String)
 ## Ссылки/экспорт
 ## -------------------------------
 @export var map_path: NodePath
-@export var ui_path: NodePath ## <— Укажем в инспекторе на UIRoot/HUD
+@export var ui_path: NodePath ## Укажем в инспекторе на UIRoot/HUD
 
 var _map: Map
 var _territories: Array[Territory] = []
@@ -35,9 +34,10 @@ var _cols: int = 0
 var _phase: int = SelectionPhase.IDLE
 var _source_id: int = -1
 var _current_player: int = PLAYER_HUMAN ## Шаг 5 будет переключать ход
+var _game_over: bool = false
 
 func _ready() -> void:
-	## Найдём карту
+	# Найдём карту
 	if map_path == NodePath():
 		push_warning("GameManager: map_path не задан.")
 		return
@@ -51,17 +51,17 @@ func _ready() -> void:
 		return
 	_map.map_territory_clicked.connect(_on_map_territory_clicked)
 
-	## Найдём HUD (опционально, но желательно)
+	# Найдём HUD (опционально, но желательно)
 	if ui_path != NodePath():
 		var ui_node := get_node(ui_path)
 		if ui_node and ui_node is UI:
 			(ui_node as UI).set_game_manager(self)
 
-	## Ждём 1 кадр, чтобы Map гарантированно сгенерировала сетку
+	# Ждём 1 кадр, чтобы Map гарантированно сгенерировала сетку
 	await get_tree().process_frame
 	_cache_map_state()
 
-	## Инициализация UI
+	# Инициализация UI
 	current_player_changed.emit(_current_player)
 	gm_status.emit("ожидаю выбор источника")
 	gm_log.emit("Игра стартовала. Игрок: Человек. Отправка = 50%.")
@@ -81,6 +81,8 @@ func _cache_map_state() -> void:
 			_territories[id] = t
 
 func _on_map_territory_clicked(id: int) -> void:
+	if _game_over:
+		return
 	if id < 0 or id >= _territories.size():
 		return
 	var clicked: Territory = _territories[id]
@@ -180,9 +182,15 @@ func _check_victory() -> void:
 		if t == null:
 			continue
 		found_ctrls[t.get_controller_id()] = true
+
 	if found_ctrls.size() == 1:
 		var only_ctrl: int = -1
 		for k in found_ctrls.keys():
 			only_ctrl = int(k)
 		gm_log.emit("=== ПОБЕДА! Контроллер %d владеет всеми территориями ===" % only_ctrl)
 		gm_status.emit("победа!")
+		_game_over = true
+		for t in _territories:
+			if t != null:
+				t.allow_clicks = false
+				t.input_pickable = false
