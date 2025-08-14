@@ -39,3 +39,4 @@ text = "Risk?lite (Godot 4.4.1)"
 
 [node name="GameManager" type="Node" parent="."]
 script = ExtResource("3_0bbpv")
+map_path = NodePath("../Map")
