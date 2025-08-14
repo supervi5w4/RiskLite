@@ -36,6 +36,17 @@ var _source_id: int = -1
 var _current_player: int = PLAYER_HUMAN ## Шаг 5 будет переключать ход
 var _game_over: bool = false
 
+func _controller_name(controller_id: int) -> String:
+        match controller_id:
+                PLAYER_HUMAN:
+                        return "Человек"
+                PLAYER_AI_1:
+                        return "ИИ-1"
+                PLAYER_AI_2:
+                        return "ИИ-2"
+                _:
+                        return str(controller_id)
+
 func _ready() -> void:
 	# Найдём карту
 	if map_path == NodePath():
@@ -183,14 +194,15 @@ func _check_victory() -> void:
 			continue
 		found_ctrls[t.get_controller_id()] = true
 
-	if found_ctrls.size() == 1:
-		var only_ctrl: int = -1
-		for k in found_ctrls.keys():
-			only_ctrl = int(k)
-		gm_log.emit("=== ПОБЕДА! Контроллер %d владеет всеми территориями ===" % only_ctrl)
-		gm_status.emit("победа!")
-		_game_over = true
-		for t in _territories:
-			if t != null:
-				t.allow_clicks = false
-				t.input_pickable = false
+        if found_ctrls.size() == 1:
+                var only_ctrl: int = -1
+                for k in found_ctrls.keys():
+                        only_ctrl = int(k)
+                var winner_name := _controller_name(only_ctrl)
+                gm_log.emit("=== ПОБЕДА! Контроллер %s владеет всеми территориями ===" % winner_name)
+                gm_status.emit("победа: %s" % winner_name)
+                _game_over = true
+                for t in _territories:
+                        if t != null:
+                                t.allow_clicks = false
+                                t.input_pickable = false
